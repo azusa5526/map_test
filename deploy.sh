@@ -8,6 +8,6 @@ git init
 git add -A
 git commit -m 'deploy'
 
-git push -f https://github.com/azusa5526/map-test.git master:gh-pages
+git push -f https://github.com/azusa5526/map_test.git master:gh-pages
 
 cd -
