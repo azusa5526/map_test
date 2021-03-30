@@ -2,11 +2,29 @@
   <div id="app">
     <div class="container">
       <div class="google-map" id="map"></div>
+      <div>Zoom Level： {{ zoomLevel }}</div>
+      <button class="btn btn-outline-secondary mb-2 me-2" @click="hideTxtContent()">
+        hide txt content
+      </button>
+      <button class="btn btn-outline-secondary mb-2 me-2" @click="showTxtContent()">
+        show txt content
+      </button>
+      <button class="btn btn-outline-secondary mb-2 me-2" @click="removeTxtContent()">
+        remove txt content
+      </button>
+      <button class="btn btn-outline-secondary mb-2 me-2" @click="addTxtContent()">
+        add txt content
+      </button>
+      <button class="btn btn-outline-secondary mb-2 me-2" @click="toggleTxtContent()">
+        toggle txt content
+      </button>
     </div>
   </div>
 </template>
 
 <script>
+import TxtOverlay from '@/assets/txtOverlay.js';
+
 export default {
   name: 'App',
   components: {},
@@ -16,7 +34,7 @@ export default {
       google: null,
       map: null,
       features: [],
-      center: { lat: 24.799989869755034, lng: 120.97194222168014 },
+      center: { lat: 24.99721088559984, lng: 121.16098520533231 },
       paths: [
         { lat: 24.802182280179526, lng: 120.97310435606073 },
         { lat: 24.801710797338675, lng: 120.97214348517628 },
@@ -24,7 +42,9 @@ export default {
         { lat: 24.80023740190553, lng: 120.97307838657736 },
         { lat: 24.800744251910007, lng: 120.97402627272027 },
         { lat: 24.80169901024468, lng: 120.97401328797855 }
-      ]
+      ],
+      zoomLevel: '',
+      overlayViewCollection: []
     };
   },
 
@@ -33,9 +53,9 @@ export default {
       this.google = window.google;
       this.map = new this.google.maps.Map(document.getElementById('map'), {
         center: this.center,
-        zoom: 17,
+        zoom: 16,
         maxZoom: 20,
-        minZoom: 5,
+        minZoom: 12,
         streetViewControl: false,
         mapTypeControl: false
       });
@@ -139,6 +159,63 @@ export default {
         fillOpacity: 0.35
       });
       hex.setMap(this.map);
+    },
+
+    addTxtContent() {
+      const jsonData = require('./assets/jsonData0.json');
+
+      for (let i = 0; i < jsonData.features.length; i++) {
+        const customTxt = `<span>${jsonData.features[i].properties.Sys_cns}123123</span>`;
+        const latlng = new this.google.maps.LatLng(
+          jsonData.features[i].geometry.coordinates[0][1],
+          jsonData.features[i].geometry.coordinates[0][0]
+        );
+
+        this.overlayViewCollection.push(new TxtOverlay(latlng, customTxt, 'txtOverlay', this.map));
+      }
+    },
+
+    removeTxtContent() {
+      this.overlayViewCollection.forEach((item) => {
+        item.setMap(null);
+      });
+    },
+
+    toggleTxtContent() {
+      this.overlayViewCollection.forEach((item) => {
+        item.toggleDOM(null);
+      });
+    },
+
+    showTxtContent() {
+      const txtElementCollection = document.querySelectorAll('.txtOverlay');
+      txtElementCollection.forEach((item) => {
+        item.classList.add('showTxtContent');
+      });
+
+      // this.overlayViewCollection.forEach((item) => {
+      //   item.show();
+      // });
+    },
+
+    hideTxtContent() {
+      const txtElementCollection = document.querySelectorAll('.txtOverlay');
+      txtElementCollection.forEach((item) => {
+        item.classList.remove('showTxtContent');
+      });
+
+      // this.overlayViewCollection.forEach((item) => {
+      //   item.hide();
+      // });
+    },
+
+    txtContentVisibiliyHandler() {
+      const zoomThreshold = 17;
+      if (this.zoomLevel < zoomThreshold) {
+        this.hideTxtContent();
+      } else {
+        this.showTxtContent();
+      }
     }
   },
 
@@ -147,6 +224,12 @@ export default {
     this.addfeature();
     this.addMarkers();
     this.addPolygon();
+    this.addTxtContent();
+
+    this.map.addListener('zoom_changed', () => {
+      this.zoomLevel = this.map.getZoom();
+      this.txtContentVisibiliyHandler();
+    });
   }
 };
 </script>
@@ -155,5 +238,19 @@ export default {
 .google-map {
   width: 100%;
   height: 600px;
+}
+
+.txtOverlay {
+  background: rgb(95, 95, 95);
+  color: white;
+  position: absolute;
+  display: none;
+  white-space: nowrap;
+  font-size: 14px;
+  padding: 4px 8px;
+}
+
+.showTxtContent {
+  display: block !important;
 }
 </style>
